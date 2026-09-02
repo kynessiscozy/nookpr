@@ -1,0 +1,46 @@
+name: Deploy NookFit to TCB Static Hosting
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# 同一时间只保留最新一次部署，取消进行中的旧任务
+concurrency:
+  group: deploy-tcb
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build（注入 TCB 环境 ID，产物直连真实后端）
+        run: npm run build
+        env:
+          VITE_TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
+          VITE_TCB_REGION: ap-shanghai
+
+      - name: Install CloudBase CLI
+        run: npm install -g @cloudbase/cli && tcb --version
+
+      - name: Login to CloudBase
+        run: tcb login --apiKeyId "${{ secrets.TCB_SECRET_ID }}" --apiKey "${{ secrets.TCB_SECRET_KEY }}"
+
+      - name: Deploy dist to static hosting root
+        # --safe 失败自动回滚；--prune 清理上一版本残留的 hash 资源；--verify 校验一致性
+        run: >
+          tcb hosting deploy ./dist /
+          -e "${{ secrets.TCB_ENV_ID }}"
+          --safe --prune --yes --verify

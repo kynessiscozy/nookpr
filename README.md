@@ -94,6 +94,23 @@ nook-fit/
 - 目标设置：每周训练次数与分钟数
 - 我的：昵称编辑、数据统计、菜单、退出登录
 
+## 自动部署（GitHub Actions → TCB 静态托管）
+
+仓库已内置 `.github/workflows/deploy.yml`：每次 push 到 `main`（或在 Actions 页手动 Run workflow）都会自动 `npm ci → 构建（注入 TCB 环境 ID）→ 部署到静态托管根目录`，带失败回滚、旧 hash 资源清理和发布校验。
+
+一次性配置：
+
+1. 在 TCB 控制台开通**静态网站托管**（地域需为上海）。
+2. 到 [访问管理 → API 密钥管理](https://console.cloud.tencent.com/cam/capi) 创建 `SecretId / SecretKey`（建议用子账号，只授予云开发相关权限）。
+3. 仓库 **Settings → Secrets and variables → Actions → New repository secret**，添加 3 个 Secret：
+   - `TCB_SECRET_ID`：腾讯云 SecretId
+   - `TCB_SECRET_KEY`：腾讯云 SecretKey
+   - `TCB_ENV_ID`：云开发环境 ID（构建时通过 `VITE_TCB_ENV_ID` 打进产物）
+4. **SPA 路由回退（必做一次）**：静态托管 → 设置 → 把「错误文档」也设为 `index.html`，否则刷新 `/plans` 这类前端路由会 404（首页文档默认已是 index.html）。
+5. push 一次代码触发部署，完成后在静态托管概览页拿到默认域名 `*.tcloudbaseapp.com`；正式使用建议绑定自定义域名。
+
+> 不配置这些 Secret 时工作流会在登录/部署步骤失败，但本地开发与演示模式不受影响。
+
 ## Nook 动作 GIF 是怎么做的
 
 1. 以 Nook 原图为身份锚点，用图像编辑模型为每个动作生成 A/B 两个关键姿态（保持角色一致）；
