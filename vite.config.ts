@@ -7,7 +7,15 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },
   },
-  server: { host: true, port: 5173, allowedHosts: ["5173-ir9o52xqxayzjaumulty6.e2b.app"] },
+  server: {
+    host: "0.0.0.0",
+    port: 5173,
+    // 允许 Arena 预览域名 *.e2b.app，跳过 TCB 登录后本地演示也需要预览
+    allowedHosts: true,
+    headers: {
+      "X-Frame-Options": "ALLOWALL",
+    },
+  },
   build: {
     chunkSizeWarningLimit: 1200,
     rollupOptions: {
