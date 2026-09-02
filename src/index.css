@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-nook-cream text-nook-ink font-body antialiased;
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(255, 214, 107, 0.18), transparent 38%),
+      radial-gradient(circle at 88% 4%, rgba(143, 227, 193, 0.20), transparent 40%),
+      radial-gradient(circle at 80% 92%, rgba(201, 184, 255, 0.18), transparent 42%);
+    background-attachment: fixed;
+    -webkit-tap-highlight-color: transparent;
+  }
+  * { -webkit-user-select: none; user-select: none; }
+  input, textarea { -webkit-user-select: text; user-select: text; }
+  button { @apply active:scale-[0.97] transition-transform; }
+}
+
+@layer components {
+  /* Claymorphism 黏土风容器 */
+  .clay {
+    @apply rounded-clay bg-white/90 shadow-clay border-2 border-nook-ink/10;
+  }
+  .clay-sm {
+    @apply rounded-2xl bg-white/90 shadow-clay-sm border-2 border-nook-ink/10;
+  }
+  .clay-inset {
+    @apply rounded-2xl bg-nook-cream/80 shadow-inner border-2 border-nook-ink/5;
+  }
+  .font-display { font-family: Fredoka, "Noto Sans SC", system-ui, sans-serif; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+/* GIF 平滑渲染 */
+img.gif-render { image-rendering: auto; }
