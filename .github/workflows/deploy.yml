@@ -32,15 +32,32 @@ jobs:
           VITE_TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
           VITE_TCB_REGION: ap-shanghai
 
+      - name: Check TCB secrets (skip deploy if not configured)
+        id: check
+        run: |
+          if [ -z "${{ secrets.TCB_SECRET_ID }}" ] || [ -z "${{ secrets.TCB_SECRET_KEY }}" ] || [ -z "${{ secrets.TCB_ENV_ID }}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⚠️ TCB secrets not configured, will skip tcb login & deploy (demo build only)"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install CloudBase CLI
+        if: steps.check.outputs.skip == 'false'
         run: npm install -g @cloudbase/cli && tcb --version
 
       - name: Login to CloudBase
+        if: steps.check.outputs.skip == 'false'
         run: tcb login --apiKeyId "${{ secrets.TCB_SECRET_ID }}" --apiKey "${{ secrets.TCB_SECRET_KEY }}"
 
       - name: Deploy dist to static hosting root
+        if: steps.check.outputs.skip == 'false'
         # --safe 失败自动回滚；--prune 清理上一版本残留的 hash 资源；--verify 校验一致性
         run: >
           tcb hosting deploy ./dist /
           -e "${{ secrets.TCB_ENV_ID }}"
           --safe --prune --yes --verify
+
+      - name: Skip notice
+        if: steps.check.outputs.skip == 'true'
+        run: echo "✅ Build succeeded in demo mode, skipped tcb login/deploy as requested"
