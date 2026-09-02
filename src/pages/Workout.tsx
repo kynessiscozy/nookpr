@@ -32,7 +32,7 @@ export default function Workout() {
     if (!repo) return;
     void (async () => {
       // plan_days.id = planId*100+dayNumber（种子规则），反推 planId
-      const planId = Math.floor(dayId / 100);
+      const planId = Math.trunc(dayId / 100);
       const { days } = await repo.getPlanWithDays(planId);
       const all = await repo.listExercises();
       const map = new Map(all.map((e) => [e.id, e]));

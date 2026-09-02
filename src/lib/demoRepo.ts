@@ -1,7 +1,8 @@
 import { Repo } from "./repo";
 import { SEED_EXERCISES, SEED_PLANS } from "./seedData";
+import { customToDays, customToPlan, newCustomPlanId } from "./customPlan";
 import type {
-  AppUser, Checkin, Exercise, Goal, Plan, PlanDay, Profile, UserPlan,
+  AppUser, Checkin, CustomPlanDef, Exercise, Goal, Plan, PlanDay, Profile, UserPlan,
 } from "./types";
 
 const delay = () => new Promise((r) => setTimeout(r, 180));
@@ -51,11 +52,20 @@ export class DemoRepo implements Repo {
 
   async listPlans(): Promise<Plan[]> {
     await delay();
-    return SEED_PLANS.map(({ days: _d, ...p }) => p);
+    const official = SEED_PLANS.map(({ days: _d, ...p }) => p);
+    const customs = this.store.userPlans
+      .filter((u) => u.customPlan)
+      .map((u) => customToPlan(u.customPlan as CustomPlanDef, u.planId));
+    return [...customs, ...official];
   }
 
   async getPlanWithDays(planId: number) {
     await delay();
+    const mine = this.store.userPlans.find((u) => u.planId === planId && u.customPlan);
+    if (mine) {
+      const def = mine.customPlan as CustomPlanDef;
+      return { plan: customToPlan(def, planId), days: customToDays(def, planId) };
+    }
     const hit = SEED_PLANS.find((p) => p.id === planId)!;
     const { days: _d, ...plan } = hit;
     return { plan, days: hit.days as PlanDay[] };
@@ -90,13 +100,37 @@ export class DemoRepo implements Repo {
   async joinPlan(planId: number): Promise<UserPlan> {
     await delay();
     const found = this.store.userPlans.find((x) => x.planId === planId);
-    if (found) return { ...found };
+    if (found) {
+      found.status = "active";
+      this.save();
+      return { ...found };
+    }
     const up: UserPlan = {
       id: uuid(), userId: this.user.uid, planId, status: "active", currentDay: 1, startedOn: today(),
     };
     this.store.userPlans.push(up);
     this.save();
     return { ...up };
+  }
+
+  async createCustomPlan(def: CustomPlanDef): Promise<UserPlan> {
+    await delay();
+    const planId = newCustomPlanId(this.store.userPlans.map((u) => u.planId));
+    // 同一时间只保留一个进行中的计划
+    this.store.userPlans.forEach((u) => { if (u.status === "active") u.status = "paused"; });
+    const up: UserPlan = {
+      id: uuid(), userId: this.user.uid, planId, status: "active", currentDay: 1,
+      startedOn: today(), customPlan: def,
+    };
+    this.store.userPlans.push(up);
+    this.save();
+    return { ...up };
+  }
+
+  async removeUserPlan(planId: number): Promise<void> {
+    await delay();
+    this.store.userPlans = this.store.userPlans.filter((u) => u.planId !== planId);
+    this.save();
   }
 
   async updateUserPlan(planId: number, patch: Partial<Pick<UserPlan, "currentDay" | "status">>) {

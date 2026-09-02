@@ -5,6 +5,7 @@ import { Loading } from "@/components/States";
 import Login from "@/pages/Login";
 import Today from "@/pages/Today";
 import Plans from "@/pages/Plans";
+import CreatePlan from "@/pages/CreatePlan";
 import PlanDetail from "@/pages/PlanDetail";
 import Workout from "@/pages/Workout";
 import Exercises from "@/pages/Exercises";
@@ -35,6 +36,7 @@ export default function App() {
           >
             <Route path="/" element={<Today />} />
             <Route path="/plans" element={<Plans />} />
+            <Route path="/plans/new" element={<CreatePlan />} />
             <Route path="/exercises" element={<Exercises />} />
             <Route path="/checkin" element={<Checkin />} />
             <Route path="/goals" element={<Goals />} />

@@ -30,6 +30,7 @@ export interface Plan {
   color: string;
   tag: string;
   isPublished: boolean;
+  isCustom?: boolean;
 }
 
 /** plan_days.items 中单个动作编排 */
@@ -39,6 +40,16 @@ export interface PlanDayItem {
   reps?: number;
   seconds?: number;
   restSeconds: number;
+}
+
+/** 用户自建计划定义（存于 user_plans.custom_plan，不新增表） */
+export interface CustomPlanDef {
+  title: string;
+  level: string;
+  color: string;
+  tag: string;
+  description: string;
+  days: Array<{ title: string; items: PlanDayItem[] }>;
 }
 
 export interface PlanDay {
@@ -66,6 +77,7 @@ export interface UserPlan {
   status: UserPlanStatus;
   currentDay: number;
   startedOn: string;
+  customPlan?: CustomPlanDef | null;
 }
 
 export interface Checkin {

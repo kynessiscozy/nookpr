@@ -2,8 +2,9 @@ import { getRdb, unwrap } from "./tcb";
 import {
   Repo, mapCheckin, mapExercise, mapGoal, mapPlan, mapPlanDay, mapProfile, mapUserPlan,
 } from "./repo";
+import { customToDays, customToPlan, newCustomPlanId } from "./customPlan";
 import type {
-  AppUser, Checkin, Exercise, Goal, Plan, PlanDay, Profile, UserPlan,
+  AppUser, Checkin, CustomPlanDef, Exercise, Goal, Plan, PlanDay, Profile, UserPlan,
 } from "./types";
 
 /**
@@ -29,17 +30,35 @@ export class TcbRepo implements Repo {
     const rows = await this.rows<Record<string, unknown>>(
       getRdb().from("plans").select().eq("is_published", true).order("id"),
     );
-    return rows.map(mapPlan);
+    const official = rows.map(mapPlan);
+    // 用户自建计划来自 user_plans.custom_plan
+    const mine = await this.rows<Record<string, unknown>>(
+      getRdb().from("user_plans").select().not("custom_plan", "is", null),
+    );
+    const customs = mine
+      .map(mapUserPlan)
+      .filter((u) => u.customPlan)
+      .map((u) => customToPlan(u.customPlan as CustomPlanDef, u.planId));
+    return [...customs, ...official];
   }
 
   async getPlanWithDays(planId: number) {
     const planRows = await this.rows<Record<string, unknown>>(
       getRdb().from("plans").select().eq("id", planId),
     );
-    const dayRows = await this.rows<Record<string, unknown>>(
-      getRdb().from("plan_days").select().eq("plan_id", planId).order("day_number"),
+    if (planRows.length) {
+      const dayRows = await this.rows<Record<string, unknown>>(
+        getRdb().from("plan_days").select().eq("plan_id", planId).order("day_number"),
+      );
+      return { plan: mapPlan(planRows[0]), days: dayRows.map(mapPlanDay) };
+    }
+    // 自建计划：从 user_plans.custom_plan 还原
+    const mine = await this.rows<Record<string, unknown>>(
+      getRdb().from("user_plans").select().eq("user_id", this.uid).eq("plan_id", planId),
     );
-    return { plan: mapPlan(planRows[0]), days: dayRows.map(mapPlanDay) };
+    const up = mapUserPlan(mine[0]);
+    if (!up.customPlan) throw new Error("计划不存在");
+    return { plan: customToPlan(up.customPlan, planId), days: customToDays(up.customPlan, planId) };
   }
 
   async ensureProfile(user: AppUser): Promise<Profile> {
@@ -94,6 +113,34 @@ export class TcbRepo implements Repo {
       getRdb().from("user_plans").update(dbPatch).eq("user_id", this.uid).eq("plan_id", planId).select(),
     );
     return mapUserPlan(rows[0]);
+  }
+  async createCustomPlan(def: CustomPlanDef): Promise<UserPlan> {
+    // 负 ID 避免与官方种子冲突；先取现有 plan_id 保证不撞号
+    const existed = await this.rows<Record<string, unknown>>(
+      getRdb().from("user_plans").select("plan_id").eq("user_id", this.uid),
+    );
+    const planId = newCustomPlanId(existed.map((r) => Number(r.plan_id)));
+    // 暂停其他进行中的计划
+    await getRdb().from("user_plans").update({ status: "paused" })
+      .eq("user_id", this.uid).eq("status", "active");
+    const rows = await this.rows<Record<string, unknown>>(
+      getRdb()
+        .from("user_plans")
+        .insert({
+          user_id: this.uid,
+          plan_id: planId,
+          status: "active",
+          current_day: 1,
+          started_on: new Date().toISOString().slice(0, 10),
+          custom_plan: def,
+        })
+        .select(),
+    );
+    return mapUserPlan(rows[0]);
+  }
+  async removeUserPlan(planId: number): Promise<void> {
+    await getRdb().from("user_plans").delete()
+      .eq("user_id", this.uid).eq("plan_id", planId);
   }
 
   async listCheckins(): Promise<Checkin[]> {

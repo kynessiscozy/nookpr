@@ -10,7 +10,7 @@ FPS=20
 HOLD=0.32      # 关键姿态保持时长
 TRANS=0.18     # 过渡时长（快速，弱化插值形变）
 
-for name in squat jack pushup plank lunge crunch knees stretch; do
+for name in squat jack pushup plank lunge crunch knees stretch bridge climber wallsit tap calf twist birdog superman; do
   cd "$TMP" && rm -f ah.mp4 bh.mp4 ab.mp4 ba.mp4 full.mp4
   A=$POSES/${name}_a.png
   B=$POSES/${name}_b.png

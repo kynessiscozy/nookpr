@@ -93,14 +93,20 @@ CREATE TABLE IF NOT EXISTS profiles (
 CREATE TABLE IF NOT EXISTS user_plans (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     TEXT NOT NULL,
-  plan_id     BIGINT NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+  -- 正数=官方 plans 课程；负数=用户自建计划（编排存于 custom_plan），故不加外键
+  plan_id     BIGINT NOT NULL,
   status      TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','paused','done')),
   current_day INT NOT NULL DEFAULT 1,
   started_on  DATE NOT NULL DEFAULT CURRENT_DATE,
+  -- 用户自建计划完整定义：{title,level,color,tag,description,days:[{title,items:[...]}]}
+  custom_plan JSONB,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (user_id, plan_id)
 );
+-- 兼容旧库：补齐列、移除阻碍自建计划负 ID 的外键
+ALTER TABLE user_plans ADD COLUMN IF NOT EXISTS custom_plan JSONB;
+ALTER TABLE user_plans DROP CONSTRAINT IF EXISTS user_plans_plan_id_fkey;
 CREATE INDEX IF NOT EXISTS idx_user_plans_user ON user_plans(user_id);
 
 -- ============================================================

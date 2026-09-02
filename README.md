@@ -50,7 +50,7 @@ node scripts/e2e_check.mjs   # 无头浏览器端到端冒烟（需本机有 Chr
    - `schema.sql`：7 张表、`current_user_id()` 辅助函数、`updated_at` 触发器，以及 RLS 策略
      - 公共内容表 `exercises / plans / plan_days`：所有登录用户只读
      - 用户数据表 `profiles / user_plans / checkins / goals`：只能读写自己的行
-   - `seed.sql`：12 个动作、3 门课程（7/14/21 天）、42 个课程日
+   - `seed.sql`：16 个动作（全部配 Nook 循环 GIF）、3 门课程（7/14/21 天）、42 个课程日
 4. 重启 `npm run dev`，登录页不再显示「本地演示模式」即为真实 TCB 链路。
 
 > 种子数据是**单一数据源**：`scripts/gen_seed.py` 同时生成 `database/seed.sql` 与 `src/lib/seedData.ts`，要改动作/课程只改这个 Python 脚本后重新运行，保证两条链路数据一致。
@@ -66,7 +66,7 @@ nook-fit/
 │  ├─ gen_seed.py           # 种子数据单一数据源生成器
 │  └─ e2e_check.mjs         # 端到端冒烟脚本
 ├─ public/
-│  ├─ gifs/                 # 8 个 Nook 动作循环 GIF（400×400，~300KB/个）
+│  ├─ gifs/                 # 16 个 Nook 动作循环 GIF（400×400，~300KB/个）
 │  ├─ poses/                # GIF 关键帧 A/B 原图（重建 GIF 用）
 │  └─ mascots/              # coach / celebrate / nook-hi 吉祥物
 ├─ build_gifs.sh            # ffmpeg 双关键帧 + 运动补偿生成无缝循环 GIF
@@ -88,6 +88,7 @@ nook-fit/
 - 邮箱验证码登录（TCB 真实链路 / 本地演示自动切换）
 - 今日首页：本周目标环、连续打卡、周历、今日训练卡、Nook 小贴士
 - 训练计划：3 门轻量课程、课程日列表、加入计划、进度推进
+- **自建训练计划**：从动作库自由挑动作、设置 1–21 天、逐动作配置组数/次数或秒数/休息，自动估算时长；编排以 jsonb 存在 `user_plans.custom_plan`（不新增表），自建计划用负 ID 与官方课程共存，可随时删除
 - 训练播放：计时/计次两类动作、组间休息可跳过、完成自动打卡并推进课程日
 - 动作库：部位筛选 + 搜索，卡片播放 Nook GIF，详情弹窗含步骤与要点
 - 打卡记录：连续天数/累计统计、月历、训练明细

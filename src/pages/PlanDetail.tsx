@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Check, Clock, Lock, Play } from "lucide-react";
+import { ArrowLeft, Check, Clock, Lock, Play, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import type { Checkin, Exercise, Plan, PlanDay, UserPlan } from "@/lib/types";
 import { Card } from "@/components/ui/card";
@@ -56,6 +56,12 @@ export default function PlanDetail() {
   }
 
   const progress = userPlan ? ((userPlan.currentDay - 1) / plan.daysTotal) * 100 : 0;
+  async function removeCustom() {
+    if (!repo || !plan || !plan.isCustom) return;
+    if (!confirm("确定删除这个自建计划吗？训练打卡记录会保留。")) return;
+    await repo.removeUserPlan(plan.id);
+    navigate("/plans");
+  }
 
   return (
     <div className="space-y-4 pb-4">
@@ -85,6 +91,11 @@ export default function PlanDetail() {
                 <span>{userPlan.currentDay - 1}/{plan.daysTotal}</span>
               </div>
               <Progress value={progress} />
+              {plan.isCustom && (
+                <button onClick={removeCustom} className="mt-1 flex items-center gap-1 text-xs font-semibold text-red-400">
+                  <Trash2 size={13} /> 删除这个自建计划
+                </button>
+              )}
             </div>
           ) : (
             <Button className="w-full" disabled={busy} onClick={join}>

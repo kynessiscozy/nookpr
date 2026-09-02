@@ -1,5 +1,5 @@
 import type {
-  Checkin, Exercise, Goal, Plan, PlanDay, Profile, UserPlan, AppUser,
+  Checkin, CustomPlanDef, Exercise, Goal, Plan, PlanDay, Profile, UserPlan, AppUser,
 } from "./types";
 
 /** 数据仓库接口：TCB PostgreSQL 与本地演示模式各实现一份 */
@@ -15,6 +15,10 @@ export interface Repo {
   listUserPlans(): Promise<UserPlan[]>;
   joinPlan(planId: number): Promise<UserPlan>;
   updateUserPlan(planId: number, patch: Partial<Pick<UserPlan, "currentDay" | "status">>): Promise<UserPlan>;
+  /** 创建用户自建计划（同时加入、置为当前进行） */
+  createCustomPlan(def: CustomPlanDef): Promise<UserPlan>;
+  /** 删除一条我的计划（自建计划用） */
+  removeUserPlan(planId: number): Promise<void>;
   // 打卡
   listCheckins(): Promise<Checkin[]>;
   addCheckin(c: Omit<Checkin, "id" | "userId">): Promise<Checkin>;
@@ -88,6 +92,11 @@ export function mapProfile(r: Record<string, unknown>): Profile {
 }
 
 export function mapUserPlan(r: Record<string, unknown>): UserPlan {
+  let custom: CustomPlanDef | null = null;
+  const cp = r.custom_plan;
+  if (cp) {
+    try { custom = (typeof cp === "string" ? JSON.parse(cp) : cp) as CustomPlanDef; } catch { custom = null; }
+  }
   return {
     id: String(r.id),
     userId: String(r.user_id),
@@ -95,6 +104,7 @@ export function mapUserPlan(r: Record<string, unknown>): UserPlan {
     status: (r.status as UserPlan["status"]) ?? "active",
     currentDay: Number(r.current_day ?? 1),
     startedOn: String(r.started_on ?? new Date().toISOString().slice(0, 10)),
+    customPlan: custom,
   };
 }
 

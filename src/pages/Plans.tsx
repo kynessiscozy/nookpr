@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Clock, CalendarRange, Check } from "lucide-react";
+import { ChevronRight, Clock, CalendarRange, Check, Plus, Wand2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import type { Plan, UserPlan } from "@/lib/types";
 import { Card } from "@/components/ui/card";
@@ -32,6 +32,19 @@ export default function Plans() {
         <p className="text-sm text-nook-inkSoft">徒手轻量，跟着 Nook 每天练一点</p>
       </header>
 
+      <Link to="/plans/new">
+        <Card className="flex items-center gap-3 border-dashed border-nook-coral/50 bg-nook-peach/40 p-3.5">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-nook-coral text-white shadow-clay-sm">
+            <Plus size={20} />
+          </span>
+          <div className="flex-1">
+            <p className="flex items-center gap-1.5 font-display font-semibold">自建训练计划 <Wand2 size={14} className="text-nook-coral" /></p>
+            <p className="text-xs text-nook-inkSoft">从 16 个动作里挑，自由编排每天练什么</p>
+          </div>
+          <ChevronRight className="text-nook-inkSoft" size={20} />
+        </Card>
+      </Link>
+
       {plans.map((p) => {
         const joined = joinedOf(p.id);
         return (
@@ -46,6 +59,7 @@ export default function Plans() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h2 className="truncate font-display text-lg font-semibold">{p.title}</h2>
+                  {p.isCustom && <Badge tone="lavender">自建</Badge>}
                 </div>
                 <p className="mt-0.5 line-clamp-2 text-[13px] leading-5 text-nook-inkSoft">{p.description}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
