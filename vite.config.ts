@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },
   },
-  server: { host: true, port: 5173 },
+  server: { host: true, port: 5173, allowedHosts: ["5173-ir9o52xqxayzjaumulty6.e2b.app"] },
   build: {
     chunkSizeWarningLimit: 1200,
     rollupOptions: {
